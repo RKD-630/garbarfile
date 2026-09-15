@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b0f14" />
+<title>PCB Gerber Designer</title>
+<link rel="stylesheet" href="style.css" />
+<!-- JSZip for Gerber packaging -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<!-- Three.js for 3D preview -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="7" cy="7" r="1" fill="#4ade80"/>
+      <circle cx="17" cy="7" r="1" fill="#4ade80"/>
+      <circle cx="7" cy="17" r="1" fill="#4ade80"/>
+      <circle cx="17" cy="17" r="1" fill="#4ade80"/>
+      <path d="M7 7 L17 17 M17 7 L7 17"/>
+    </svg>
+    <span class="brand-name">PCB Gerber Designer</span>
+  </div>
+  <nav class="top-actions">
+    <button id="btnNew" title="New Project"><span>📄</span><span class="lbl">New</span></button>
+    <button id="btnOpen" title="Open Project"><span>📂</span><span class="lbl">Open</span></button>
+    <button id="btnSave" title="Save Project"><span>💾</span><span class="lbl">Save</span></button>
+    <button id="btnExport" class="accent" title="Export Gerber"><span>📦</span><span class="lbl">Export Gerber</span></button>
+    <button id="btn3D" title="3D Preview"><span>🧊</span><span class="lbl">3D</span></button>
+    <button id="btnSettings" title="Settings"><span>⚙️</span><span class="lbl">Settings</span></button>
+  </nav>
+</header>
+
+<!-- ===================== MAIN LAYOUT ===================== -->
+<main class="app">
+  <!-- LEFT: Component Library -->
+  <aside class="panel left-panel" id="leftPanel">
+    <div class="panel-head">
+      <h3>Components</h3>
+      <input id="compSearch" type="search" placeholder="Search..." />
+    </div>
+    <div class="comp-cats" id="compCats"></div>
+    <div class="comp-list" id="compList"></div>
+  </aside>
+
+  <!-- CENTER: Canvas -->
+  <section class="canvas-wrap">
+    <div class="toolbar" id="toolbar">
+      <button data-tool="select" class="active" title="Select (V)">⮹ Select</button>
+      <button data-tool="move" title="Move (M)">✥ Move</button>
+      <button data-tool="rotate" title="Rotate (R)">↻ Rotate</button>
+      <button data-tool="delete" title="Delete (Del)">🗑 Delete</button>
+      <span class="sep"></span>
+      <button data-tool="place" title="Place Component (P)">➕ Place</button>
+      <button data-tool="route" title="Route Track (T)">🔌 Route</button>
+      <button data-tool="via" title="Via (W)">⊕ Via</button>
+      <button data-tool="zone" title="Copper Zone (Z)">▦ Zone</button>
+      <button data-tool="text" title="Text (X)">𝐓 Text</button>
+      <span class="sep"></span>
+      <button data-tool="line" title="Line">╱ Line</button>
+      <button data-tool="rect" title="Rectangle">▭ Rect</button>
+      <button data-tool="circle" title="Circle">◯ Circle</button>
+      <button data-tool="arc" title="Arc">⌒ Arc</button>
+      <button data-tool="hole" title="Hole">⊙ Hole</button>
+      <button data-tool="measure" title="Measure">📏 Measure</button>
+      <span class="sep"></span>
+      <button id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+      <button id="btnRedo" title="Redo (Ctrl+Y)">↷</button>
+      <button id="btnDRC" title="Design Rule Check">🛡 DRC</button>
+      <button id="btnFit" title="Fit Board">⤢ Fit</button>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+      <div class="ruler ruler-y" id="rulerY"></div>
+      <div class="ruler ruler-x" id="rulerX"></div>
+      <canvas id="pcbCanvas"></canvas>
+      <div class="layer-bar" id="layerBar">
+        <button data-layer="F.Cu" class="active">F.Cu</button>
+        <button data-layer="B.Cu">B.Cu</button>
+        <button data-layer="F.Silkscreen">F.Silk</button>
+        <button data-layer="B.Silkscreen">B.Silk</button>
+        <button data-layer="F.Mask">F.Mask</button>
+        <button data-layer="B.Mask">B.Mask</button>
+        <button data-layer="Edge.Cuts">Edge</button>
+      </div>
+      <div class="zoom-controls">
+        <button id="zoomIn" title="Zoom In">+</button>
+        <button id="zoomOut" title="Zoom Out">−</button>
+        <span id="zoomLabel">100%</span>
+      </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar" id="statusbar">
+      <span id="coordX">X: 0.00 mm</span>
+      <span id="coordY">Y: 0.00 mm</span>
+      <span>Grid: <b id="statGrid">0.50</b> mm</span>
+      <span>Track: <b id="statTrack">0.25</b> mm</span>
+      <span>Layer: <b id="statLayer">F.Cu</b></span>
+      <span>Components: <b id="statComps">0</b></span>
+      <span>Tracks: <b id="statTracks">0</b></span>
+      <span>Unconnected: <b id="statUnconn">0</b></span>
+      <span>DRC: <b id="statDrc">0</b></span>
+    </div>
+  </section>
+
+  <!-- RIGHT: Properties Panel -->
+  <aside class="panel right-panel" id="rightPanel">
+    <div class="panel-head"><h3>Properties</h3></div>
+    <div id="propsContent" class="props-content">
+      <p class="muted">Select an object to edit its properties.</p>
+    </div>
+
+    <div class="panel-head" style="margin-top:10px"><h3>Board Setup</h3></div>
+    <div class="props-content" id="boardSetup">
+      <label>Name <input id="boardName" type="text" value="MyPCB"/></label>
+      <label>Width (mm) <input id="boardW" type="number" value="50" step="0.1"/></label>
+      <label>Height (mm) <input id="boardH" type="number" value="40" step="0.1"/></label>
+      <label>Shape
+        <select id="boardShape">
+          <option value="rect">Rectangle</option>
+          <option value="roundrect">Rounded Rectangle</option>
+          <option value="circle">Circle</option>
+        </select>
+      </label>
+      <label>Grid (mm)
+        <select id="gridSize">
+          <option value="0.1">0.1</option>
+          <option value="0.25">0.25</option>
+          <option value="0.5" selected>0.5</option>
+          <option value="1">1.0</option>
+        </select>
+      </label>
+      <label>Track width (mm) <input id="trackW" type="number" value="0.25" step="0.05"/></label>
+      <label>Clearance (mm) <input id="clearance" type="number" value="0.15" step="0.05"/></label>
+      <label>Via size (mm) <input id="viaSize" type="number" value="0.8" step="0.1"/></label>
+      <label>Via hole (mm) <input id="viaHole" type="number" value="0.4" step="0.1"/></label>
+      <label>Copper (oz)
+        <select id="copperOz">
+          <option value="0.5">0.5</option>
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+        </select>
+      </label>
+      <label>Layers
+        <select id="layerCount">
+          <option value="1">1-layer</option>
+          <option value="2" selected>2-layer</option>
+          <option value="4">4-layer</option>
+        </select>
+      </label>
+      <button id="applyBoard" class="btn-primary">Apply</button>
+    </div>
+
+    <div class="panel-head" style="margin-top:10px"><h3>Nets / Ratsnest</h3></div>
+    <div class="props-content" id="netsList">
+      <p class="muted">No nets defined yet.</p>
+    </div>
+  </aside>
+</main>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal" id="modalExport">
+  <div class="modal-card">
+    <h2>PCB Manufacturing Files</h2>
+    <div class="file-list" id="fileList"></div>
+    <div class="modal-actions">
+      <button id="btnPreviewGerber" class="btn-primary">👁 Preview Gerber</button>
+      <button id="btnDownloadZip" class="btn-primary">⬇ Download ZIP</button>
+      <button id="btnCloseExport">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalPreview">
+  <div class="modal-card large">
+    <h2>Gerber Preview</h2>
+    <div class="preview-layers" id="previewLayers"></div>
+    <div class="preview-canvas-wrap">
+      <canvas id="previewCanvas" width="800" height="600"></canvas>
+    </div>
+    <div class="modal-actions">
+      <button id="btnClosePreview">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal3D">
+  <div class="modal-card large">
+    <h2>3D PCB Preview</h2>
+    <div class="three-wrap" id="threeWrap"></div>
+    <div class="three-controls">
+      <button data-view="top">Top</button>
+      <button data-view="front">Front</button>
+      <button data-view="back">Back</button>
+      <button data-view="iso">Isometric</button>
+    </div>
+    <div class="modal-actions">
+      <button id="btnClose3D">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalDrc">
+  <div class="modal-card">
+    <h2>Design Rule Check</h2>
+    <div id="drcResults"></div>
+    <div class="modal-actions">
+      <button id="btnCloseDrc">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalNew">
+  <div class="modal-card">
+    <h2>New Project</h2>
+    <p class="muted">Unsaved changes will be lost. Continue?</p>
+    <div class="modal-actions">
+      <button id="btnConfirmNew" class="btn-primary">Create New</button>
+      <button id="btnCancelNew">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalOpen">
+  <div class="modal-card">
+    <h2>Open Project</h2>
+    <div id="recentList"></div>
+    <div class="modal-actions">
+      <button id="btnImportJson">📂 Import .json</button>
+      <button id="btnCloseOpen">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
