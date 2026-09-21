@@ -45,11 +45,11 @@ label input,label select{margin-top:3px}
 .comp-item .sub{font-size:10px;color:#6b7684}
 
 /* ============ CANVAS AREA ============ */
-.canvas-wrap{display:flex;flex-direction:column;background:#0b0f14;position:relative;overflow:hidden}
-.toolbar{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:#0f141b;border-bottom:1px solid #1e2631}
+.canvas-wrap{display:flex;flex-direction:column;background:#0b0f14;position:relative;overflow:hidden;flex:1;min-height:0;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:#0f141b;border-bottom:1px solid #1e2631;flex-shrink:0}
 .toolbar button{font-size:11px;padding:5px 8px}
-.canvas-container{flex:1;position:relative;overflow:hidden;background:#0a0e13}
-#pcbCanvas{position:absolute;top:0;left:0;touch-action:none;cursor:crosshair}
+.canvas-container{flex:1;position:relative;overflow:hidden;background:#0a0e13;min-height:200px;min-width:200px;width:100%;height:100%}
+#pcbCanvas{position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:crosshair;display:block}
 .ruler{position:absolute;background:#0f141b;z-index:5;pointer-events:none;font-size:9px;color:#6b7684}
 .ruler-x{top:0;left:24px;right:0;height:20px;border-bottom:1px solid #1e2631}
 .ruler-y{top:20px;left:0;bottom:0;width:24px;border-right:1px solid #1e2631}
@@ -60,12 +60,19 @@ label input,label select{margin-top:3px}
 .zoom-controls button{width:30px;height:30px;padding:0;font-size:16px}
 #zoomLabel{font-size:10px;text-align:center;color:#9aa5b1;padding:2px}
 
+.measure-hud{position:absolute;top:30px;left:34px;background:#0f141bcc;border:1px solid #3b82f6;color:#93c5fd;padding:6px 10px;border-radius:6px;font-size:11px;pointer-events:none;z-index:15;backdrop-filter:blur(6px);font-family:monospace}
+
 /* ============ STATUS BAR ============ */
-.statusbar{display:flex;flex-wrap:wrap;gap:10px;padding:5px 12px;background:#0f141b;border-top:1px solid #1e2631;font-size:11px;color:#9aa5b1}
+.statusbar{display:flex;flex-wrap:wrap;gap:10px;padding:5px 12px;background:#0f141b;border-top:1px solid #1e2631;font-size:11px;color:#9aa5b1;flex-shrink:0}
 .statusbar b{color:#4ade80}
 
-/* ============ PROPERTIES ============ */
+/* ============ PROPERTIES & NETS ============ */
 .props-content{padding:10px 12px}
+.net-tag{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:4px;background:#1a212b;border:1px solid #2a3340;border-radius:4px;font-size:11px;cursor:pointer}
+.net-tag:hover{border-color:#3b82f6;background:#1e293b}
+.net-tag.active{border-color:#10b981;background:#064e3b}
+.pin-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px}
+.pin-row input{padding:3px 6px;font-size:11px}
 
 /* ============ MODALS ============ */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
@@ -75,7 +82,8 @@ label input,label select{margin-top:3px}
 .modal-card h2{font-size:16px;margin-bottom:14px;color:#e5e9ef}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
 .file-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.file-list .file{padding:8px 10px;background:#0f141b;border:1px solid #2a3340;border-radius:5px;font-size:12px;display:flex;align-items:center;gap:6px}
+.file-list .file{padding:8px 10px;background:#0f141b;border:1px solid #2a3340;border-radius:5px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;transition:border-color .15s}
+.file-list .file:hover{border-color:#3b82f6}
 .file-list .file.ok{border-color:#10b981}
 .file-list .file.err{border-color:#ef4444}
 
